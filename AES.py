@@ -60,7 +60,6 @@ def EncryptAES(plainText, key):
     for i in range(0, int(math.ceil(len(binaryPlainText)/128))):
         listOfBlocks.append(TransformToStateArray(binaryPlainText[i*128:(i+1)*128]))
         
-        
         # State array test print
         print("Block " + str(i) + ": ")
         print(listOfBlocks[i])
@@ -70,14 +69,56 @@ def EncryptAES(plainText, key):
     print(keyStateArray)
     print('\n')
     
-    print(XorBits(listOfBlocks[0], keyStateArray))
+    # Key Addition
+    xorOutput = KeyAddition(listOfBlocks[0], keyStateArray)
+    print(xorOutput)
+    
+    # 10 Rounds of AES
+    for i in range(0,2):
+        # Print round number
+        print("Round: " + str(int(i+1)))
         
+        # Byte Substitution - must convert to hex
+        hexOutput = BinaryToHex(xorOutput)
+        print(hexOutput)
+        byteSubstitution = ByteSubstitution(hexOutput)
+        print(byteSubstitution)
+        
+        # Shift Rows
+        
+        # Mix Column
+        
+        # Key Addition - must convert back to binary
+        binaryValues = HexToBinary(byteSubstitution)
+        xorOutput = KeyAddition(binaryValues, keyStateArray)
+        print(xorOutput)
     
 def DecryptAES(cipherText, key):
     
     if(not(len(key) == 128)):
         print("INVLAID KEY LENGTH, PLEASE TRY AGAIN")
         exit
+        
+def BinaryToHex(inputString):
+    for i in range(len(inputString)):
+        for j in range(len(inputString[i])):
+            decimalValue = int(inputString[i][j], 2)
+            inputString[i][j] = str(hex(decimalValue)[2:])
+            while(len(inputString[i][j]) < 2):
+                inputString[i][j] = "0" + inputString[i][j] 
+    
+    return inputString  
+
+def HexToBinary(inputString):      
+    scale = 16
+    
+    for i in range(len(inputString)):
+        for j in range(len(inputString[i])):            
+            inputString[i][j] = str((bin(int(inputString[i][j], scale)))[2:] )
+            while(len(inputString[i][j]) < 8):
+                inputString[i][j] = "0" + inputString[i][j]  
+    
+    return inputString          
 
 """
 Receives 16 bytes and returns them in a state array corresponding to AES
@@ -106,7 +147,10 @@ def TransformToStateArray(inputBytes):
         
     return [row0, row1, row2, row3]
 
-def XorBits(stateArray, key):
+"""
+Receives 16 bytes and XORs with 16 byte key.
+""" 
+def KeyAddition(stateArray, key):
     
     for i in range(0, 4):        
         for j in range(0, 4):
@@ -118,28 +162,11 @@ def XorBits(stateArray, key):
                     stateArray[i][j] = stateArray[i][j][:k] + "1" + stateArray[i][j][k+1:]
     
     return stateArray
-        
-"""
-def RoundByteTransform(inputBlock):
-    
-    # Initial round key addition
-    AddRoundKey()
-    
-    # First Nr-1 rounds
-    for i in range(0,Nr-1):
-        SubBytes()
-        ShiftRows()
-        MixColumns
-        AddRoundKey()
-    
-    SubBytes()
-    ShiftRows()
-    AddRoundKey()
-        
-    
-    return inputBlock
 
-def SubBytes(hexStateArray):
+"""
+Receives 16 bytes and substitutes with sBox value.
+""" 
+def ByteSubstitution(hexStateArray):
     xValue = ""
     yValue = ""
     
@@ -168,33 +195,31 @@ def SubBytes(hexStateArray):
              
              tempVal = hexStateArray[i][j]
              
-             for k in tempVal: 
-                 print(iteration)
-                 
-                 if(k == "A"):
+             for k in tempVal:                  
+                 if(k == "A" or k == "a"):
                      k = "10"
-                 elif(k == "B"):
+                 elif(k == "B" or k == "b"):
                      k = "11"
-                 elif(k == "C"):
+                 elif(k == "C" or k == "c"):
                      k = "12"
-                 elif(k == "D"):
+                 elif(k == "D" or k == "d"):
                      k = "13"
-                 elif(k == "E"):
+                 elif(k == "E" or k == "e"):
                      k = "14"
-                 elif(k == "F"):
+                 elif(k == "F" or k == "f"):
                      k = "15"
                  
                  if(iteration == 0):
                      xValue = int(k)
                  else:
                      yValue = int(k)
+                     hexStateArray[i][j] = sBox[xValue][yValue]
                      
-                 iteration += 1
-                 
-        hexStateArray[i][j] = sBox[xValue][yValue]
+                 iteration += 1       
              
-    return hexStateArray        
-    
+    return hexStateArray      
+  
+"""    
 def ShiftRows():
     print("null")
     
@@ -204,12 +229,10 @@ def MixColumns():
 def AddRoundKey():
     print("null")
     
-
-    
 def InvMixColumns():
     print("null")
     
-def InvSubBytes():
+def InvByteSubstitution():
     print("null")
     
 def RotWord():
