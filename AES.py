@@ -29,9 +29,10 @@ def EncryptAES(plainText, key):
     
     '''
     TESTING PURPOSES ONLY
+    Key that inverses plaintext
     '''
     for i in range(0,128):
-        key += "0";
+        key += "1";
     
     if(not(len(key) == 128)):
         print("INVLAID KEY LENGTH, PLEASE TRY AGAIN")
@@ -262,7 +263,7 @@ Receives 16 bytes and XORs with 16 byte key.
 """ 
 def KeyAddition(stateArray, key):
     
-    for i in range(0, 4):        
+    for i in range(0, 4):
         for j in range(0, 4):
             for k in range(0, len(stateArray[i][j])):
                 # Changing stateArray[i][j] at location k in string
