@@ -115,7 +115,8 @@ def EncryptAES(plainText, key):
     # Key Addition - must convert back to binary
     binaryValues = HexToBinary(mixColumnOutput)
     xorOutput = KeyAddition(binaryValues, keyStateArray)
-    print(xorOutput)
+    finalHex = BinaryToHex(xorOutput)
+    print(finalHex)
     
 def DecryptAES(cipherText, key):
     
@@ -373,12 +374,12 @@ def MixColumns(hexStateArray):
                       ["00000001", "00000010", "00000011", "00000001"],
                       ["00000001", "00000001", "00000010", "00000011"],
                       ["00000011", "00000001", "00000001", "00000010"]]
+    
 
     for i in range(0,4):
         
         # Temporary vector to grab the 4 used values for the multiplication
         tempVector = [hexStateArray[0][i], hexStateArray[1][i], hexStateArray[2][i], hexStateArray[3][i]]
-        print("Temp vector " + str(i) + ": " + str(tempVector))
         
         for j in range(4):
             
@@ -386,7 +387,6 @@ def MixColumns(hexStateArray):
             tempVectorConst = [constantMatrix[j][0], constantMatrix[j][1], constantMatrix[j][2], constantMatrix[j][3]]
             # Starting point for 3 XOR operations combining the multiplications
             prevResult = "00000000"
-            print("Temp const vector " + str(j) + ": " + str(tempVectorConst))
             
             for k in range(4):
                 
@@ -402,19 +402,15 @@ def MixColumns(hexStateArray):
                         leftShift = leftShift[1:]
                     
                     if(tempVectorConst[k] == "00000011"):
-                        print("GF^3 result: " + str(XOR(leftShift, tempVector[k])))
                         prevResult = XOR(prevResult, XOR(leftShift, tempVector[k]))
                     else:
-                        print("GF^2 result: " + str(leftShift))
                         prevResult = XOR(prevResult, leftShift)
                     
                 else:
-                    print("GF^1 result: " + str(tempVector[k]))
                     # Identity matrix, no change (const is 1)
                     prevResult = XOR(prevResult, tempVector[k])
                     
             hexStateArray[j][i] = prevResult
-        print("\n")
         
     return hexStateArray
 

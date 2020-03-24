@@ -28,11 +28,18 @@ sBox =      [["63", "7C", "77", "7B", "F2", "6B", "6F", "C5", "30", "01", "67", 
              ["8C", "A1", "89", "0D", "BF", "E6", "42", "68", "41", "99", "2D", "0F", "B0", "54", "BB", "16"]]
 
 RC = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54]
-
-key = "11110000111100001111000011110000111100001111000011110000111100001111000011110000111100001111000011110000111100001111000011110000"
 keyExpansion = []
 
-def keySchedule128():
+def keySchedule128(keyArr):
+    
+    key = ""
+    
+    # Convert to binary
+    for i in range(len(keyArr)):
+        keyArr[i] = bin(int(keyArr[i], 16))[2:]
+        while(len(keyArr[i]) < 8):
+            keyArr[i] = "0" + keyArr[i]
+        key += keyArr[i]
     
     # Initial 4 byte input
     for i in range(0,4):
@@ -43,9 +50,12 @@ def keySchedule128():
         for i in range(0,4):
             # XOR 0 w/ g(3), 1 w/ 0, 2 w/ 1, 3 w/ 2
             if(i == 0):
-                keyExpansion.append(XOR(keyExpansion[keyRound*i], funcG(keyExpansion[keyRound*i+3], keyRound)))
+                keyExpansion.append(XOR(keyExpansion[keyRound*4], funcG(keyExpansion[keyRound*4+3], keyRound)))
             else:
-                keyExpansion.append(XOR(keyExpansion[keyRound*i], keyExpansion[keyRound*i-1]))
+                if(keyRound == 0):
+                    keyExpansion.append(XOR(keyExpansion[i], keyExpansion[i+3]))
+                else:
+                    keyExpansion.append(XOR(keyExpansion[keyRound*4+i], keyExpansion[keyRound*4+i+3]))
                 
     return keyExpansion
         
