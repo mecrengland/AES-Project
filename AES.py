@@ -19,6 +19,7 @@ EncryptAES("0123456789ABCDEF","")
 import math
 import numpy as np
 from keySchedule import XOR
+from keySchedule import keySchedule128
 
 # Global Variables:
 Nk = 4
@@ -28,61 +29,45 @@ Nb = 4
 
 def EncryptAES(plainText, key):
     
-    '''
-    TESTING PURPOSES ONLY
-    Key that inverses plaintext
-    '''
-    for i in range(0,128):
-        key += "1";
+    key = key.split()
     
-    if(not(len(key) == 128)):
+    if(not(len(key) == 16)):
         print("INVLAID KEY LENGTH, PLEASE TRY AGAIN")
-        exit
-        
-    keyStateArray = TransformToStateArray(key)
+        return -1
+    
+    expandedKey = keySchedule128(key)
     
     # List of blocks of 16 bytes
     listOfBlocks = []
     # Binary representation of plain text
     binaryPlainText = ""
     
-    # To allow for proper state array transformation, end is padded with spaces 
-    while(len(plainText)%16 != 0):
-        plainText += " "
+    # Convert plaintext into array
+    plainText = plainText.split()
     
     # Convert plain text to binary
-    for character in plainText:
-        tempBinary = str(bin(ord(character))[2:])
-            
-        while(len(tempBinary) < 8):
-            tempBinary = "0" + tempBinary
-        
-        binaryPlainText += tempBinary
+    for i in range(len(plainText)):
+        plainText[i] = bin(int(plainText[i], 16))[2:]
+        while(len(plainText[i]) < 8):
+            plainText[i] = "0" + plainText[i]
+        binaryPlainText += plainText[i]
     
     # For each block of 16 bytes, place into state array and add to list of blocks
     for i in range(0, int(math.ceil(len(binaryPlainText)/128))):
         listOfBlocks.append(TransformToStateArray(binaryPlainText[i*128:(i+1)*128]))
-        
-        # State array test print
-        print("Block " + str(i) + ": ")
-        print(listOfBlocks[i])
-        print('\n')
-        
-    # State array test print
-    print(keyStateArray)
-    print('\n')
     
     # Key Addition
+    keyStateArray = TransformToStateArray("".join(expandedKey[:4]))
     xorOutput = KeyAddition(listOfBlocks[0], keyStateArray)
-    print(xorOutput)
     
-    # 9 Rounds of AES
-    for i in range(0,8):
+    # 10 Rounds of AES
+    for i in range(0,10):
         # Print round number
         print("Round: " + str(int(i+1)))
         
         # Byte Substitution - must convert to hex
         hexOutput = BinaryToHex(xorOutput)
+        print(hexOutput)
         byteSubstitutionOutput = ByteSubstitution(hexOutput)
         print(byteSubstitutionOutput)
         
@@ -90,33 +75,22 @@ def EncryptAES(plainText, key):
         shiftValueOutput = ShiftRows(byteSubstitutionOutput)
         print(shiftValueOutput)
         
-        # Mix Column
+        # Convert to binary for Mix Column operation
         binaryValues = HexToBinary(shiftValueOutput)
-        mixColumnOutput = MixColumns(binaryValues)
-        print(mixColumnOutput)
+        
+        # Mix Column
+        if(not(i == 9)):
+            mixColumnOutput = MixColumns(binaryValues)
+            print(mixColumnOutput)
         
         # Key Addition - must convert back to binary
-        xorOutput = KeyAddition(mixColumnOutput, keyStateArray)
+        keyStateArray = TransformToStateArray("".join(expandedKey[(i+1)*4:(i+1)*4+4]))
+        if(not(i == 9)): 
+            xorOutput = KeyAddition(mixColumnOutput, keyStateArray)
+        else:
+            xorOutput = KeyAddition(binaryValues, keyStateArray)
         print(xorOutput)
-        
-    # 10th round has no MixColumn
-    # Print round number
-    print("Round 10: ")
     
-    # Byte Substitution - must convert to hex
-    hexOutput = BinaryToHex(xorOutput)
-    byteSubstitutionOutput = ByteSubstitution(hexOutput)
-    print(byteSubstitutionOutput)
-    
-    # Shift Rows
-    shiftValueOutput = ShiftRows(byteSubstitutionOutput)
-    print(shiftValueOutput)
-    
-    # Key Addition - must convert back to binary
-    binaryValues = HexToBinary(mixColumnOutput)
-    xorOutput = KeyAddition(binaryValues, keyStateArray)
-    finalHex = BinaryToHex(xorOutput)
-    print(finalHex)
     
 def DecryptAES(cipherText, key):
     
