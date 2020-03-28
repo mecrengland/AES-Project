@@ -89,96 +89,81 @@ def EncryptAES(plainText, key):
             xorOutput = KeyAddition(mixColumnOutput, keyStateArray)
         else:
             xorOutput = KeyAddition(binaryValues, keyStateArray)
-        print(xorOutput)
+        
+    print("FINAL ENCRYPTED OUTPUT: " + str(BinaryToHex(xorOutput)))
     
     
 def DecryptAES(cipherText, key):
     
-    if(not(len(key) == 128)):
-        print("INVLAID KEY LENGTH, PLEASE TRY AGAIN")
-        exit
+    key = key.split()
     
-    '''
-    TESTING PURPOSES ONLY
-    '''
-    for i in range(0,128):
-        key += "0";
-    
-    if(not(len(key) == 128)):
+    if(not(len(key) == 16)):
         print("INVLAID KEY LENGTH, PLEASE TRY AGAIN")
-        exit
-        
-    keyStateArray = TransformToStateArray(key)
+        return -1
+    
+    expandedKey = keySchedule128(key)
     
     # List of blocks of 16 bytes
     listOfBlocks = []
-    # Binary representation of plain text
-    binaryPlainText = ""
+    # Binary representation of cipher text
+    binaryCipherText = ""
     
-    # To allow for proper state array transformation, end is padded with spaces 
-    while(len(cipherText)%16 != 0):
-        cipherText += " "
+    # Convert plaintext into array
+    cipherText = cipherText.split()
     
     # Convert plain text to binary
-    for character in cipherText:
-        tempBinary = str(bin(ord(character))[2:])
-            
-        while(len(tempBinary) < 8):
-            tempBinary = "0" + tempBinary
-        
-        binaryPlainText += tempBinary
+    for i in range(len(cipherText)):
+        cipherText[i] = bin(int(cipherText[i], 16))[2:]
+        while(len(cipherText[i]) < 8):
+            cipherText[i] = "0" + cipherText[i]
+        binaryCipherText += cipherText[i]
     
     # For each block of 16 bytes, place into state array and add to list of blocks
-    for i in range(0, int(math.ceil(len(binaryPlainText)/128))):
-        listOfBlocks.append(TransformToStateArray(binaryPlainText[i*128:(i+1)*128]))
-        
-        # State array test print
-        print("Block " + str(i) + ": ")
-        print(listOfBlocks[i])
-        print('\n')
-        
-    # State array test print
-    print(keyStateArray)
-    print('\n')
+    for i in range(0, int(math.ceil(len(binaryCipherText)/128))):
+        listOfBlocks.append(TransformToStateArray(binaryCipherText[i*128:(i+1)*128]))
     
-    # First round has no Mix Column
-    # Print round number
-    print("Round 10: ")
+    byteSubstitutionOutput = [[]]
+    print(listOfBlocks[0])
     
-    # Key Addition
-    xorOutput = KeyAddition(keyStateArray, keyStateArray)
-    print(keyStateArray)
-    
-    # Shift Rows
-    hexOutput = BinaryToHex(xorOutput)
-    shiftValueOutput = InvShiftRows(hexOutput)
-    print(shiftValueOutput)
-    
-    # Byte Substitution - must convert to hex
-    byteSubstitutionOutput = ByteSubstitution(shiftValueOutput)
-    print(byteSubstitutionOutput)
-    
-    for i in range(0,9):
+    # 10 Rounds of AES
+    for i in range(0,10):
         # Print round number
         print("Round: " + str(int(i+1)))
         
-        # Key Addition
-        binaryValues = HexToBinary(byteSubstitutionOutput)
-        xorOutput = KeyAddition(binaryValues, keyStateArray)
-        print(xorOutput)
+        # Key Addition - must convert back to binary
+        keyStateArray = TransformToStateArray("".join(expandedKey[(10-i)*4:(10-i)*4+4]))
+        if(not(i == 0)): 
+            keyAddOutput = KeyAddition(byteSubstitutionOutput, keyStateArray)
+        else:
+            keyAddOutput = KeyAddition(listOfBlocks[0], keyStateArray)
+        print(keyStateArray)
+        print(keyAddOutput)
         
         # Mix Column
-        hexOutput = BinaryToHex(xorOutput)
-        mixColumnOutput = InvMixColumns(hexOutput)
-        print(mixColumnOutput)
+        if(not(i == 0)):
+            mixColumnOutput = InvMixColumns(keyAddOutput)
+            print(mixColumnOutput)
+        else:
+            mixColumnOutput = keyAddOutput
         
         # Shift Rows
-        shiftValueOutput = InvShiftRows(mixColumnOutput)   
-        print(shiftValueOutput)
-        
+        shiftValueOutput = InvShiftRows(mixColumnOutput)
+            
         # Byte Substitution - must convert to hex
-        byteSubstitutionOutput = InvByteSubstitution(shiftValueOutput)
+        hexOutput = BinaryToHex(shiftValueOutput)
+        print(hexOutput)
+        byteSubstitutionOutput = InvByteSubstitution(hexOutput)
         print(byteSubstitutionOutput)
+        
+        byteSubstitutionOutput = HexToBinary(byteSubstitutionOutput)
+        
+    
+    # Key Addition
+    keyStateArray = TransformToStateArray("".join(expandedKey[:4]))
+    finalOutput = KeyAddition(byteSubstitutionOutput, keyStateArray)
+    
+    print("FINAL DECRYPTED OUTPUT: " + str(BinaryToHex(finalOutput)))
+    
 
 """
 Converts binary string to hex string.
@@ -397,18 +382,9 @@ def InvMixColumns(hexStateArray):
     constantMatrix = [["00001110", "00001011", "00001101", "00001001"],
                       ["00001001", "00001110", "00001011", "00001101"],
                       ["00001101", "00001001", "00001110", "00001011"],
-                      ["00001011", "00001101", "00001001", "00001110"]]
-    
-    '''
-    TESTING ARRAY, REMOVE LATER
-    '''
-    hexStateArray =  [["00000100", "00001011", "00001101", "00001001"],
-                      ["01100110", "00001110", "00001011", "00001101"],
-                      ["10000001", "00001001", "00001110", "00001011"],
-                      ["11100101", "00001101", "00001001", "00001110"]]
-    
+                      ["00001011", "00001101", "00001001", "00001110"]]    
 
-    for i in range(0,1):
+    for i in range(0,4):
         
         # Temporary vector to grab the 4 used values for the multiplication
         tempVector = [hexStateArray[0][i], hexStateArray[1][i], hexStateArray[2][i], hexStateArray[3][i]]
