@@ -394,7 +394,87 @@ Receives 16 bytes and multiples columns.
 """   
 def InvMixColumns(hexStateArray):
     
+    constantMatrix = [["00001110", "00001011", "00001101", "00001001"],
+                      ["00001001", "00001110", "00001011", "00001101"],
+                      ["00001101", "00001001", "00001110", "00001011"],
+                      ["00001011", "00001101", "00001001", "00001110"]]
+    
+    '''
+    TESTING ARRAY, REMOVE LATER
+    '''
+    hexStateArray =  [["00000100", "00001011", "00001101", "00001001"],
+                      ["01100110", "00001110", "00001011", "00001101"],
+                      ["10000001", "00001001", "00001110", "00001011"],
+                      ["11100101", "00001101", "00001001", "00001110"]]
+    
+
+    for i in range(0,1):
+        
+        # Temporary vector to grab the 4 used values for the multiplication
+        tempVector = [hexStateArray[0][i], hexStateArray[1][i], hexStateArray[2][i], hexStateArray[3][i]]
+        
+        for j in range(4):
+            
+            # Temporary vector holding the 4 used constants from the matrix
+            tempVectorConst = [constantMatrix[j][0], constantMatrix[j][1], constantMatrix[j][2], constantMatrix[j][3]]
+            # Starting point for 3 XOR operations combining the multiplications
+            prevResult = "00000000"
+            
+            for k in range(4):
+                
+                # Mult by x^3 + x^2 + x
+                if(tempVectorConst[k] == "00001110"):
+                    result = polyMultWithReduction("00001110", tempVector[k])
+                # Mult by x^3 + x + 1
+                elif(tempVectorConst[k] == "00001011"):
+                    result = polyMultWithReduction("00001011", tempVector[k])
+                # Mult by x^3 + x^2 + 1
+                elif(tempVectorConst[k] == "00001101"):
+                    result = polyMultWithReduction("00001101", tempVector[k])
+                # Mult by x^3 + 1
+                elif(tempVectorConst[k] == "00001001"):
+                    result = polyMultWithReduction("00001001", tempVector[k])
+                
+                prevResult = XOR(prevResult, result)
+                    
+            hexStateArray[j][i] = prevResult
+        
     return hexStateArray
+
+# Multiplies two polynomials and returns them as a binary string
+def polyMultWithReduction(poly1, poly2):
+    
+    # Irreducible polynomial from AES
+    px = [1,0,0,0,1,1,0,1,1]
+    # Empty arrays to hold data
+    resultArr = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    
+    # Multiplies all non-zero coefficient elements in polynomial
+    for i in range(len(poly1)):
+        for j in range(len(poly2)):
+            if(poly1[i] == "1" and poly2[j] == "1"):
+                if(resultArr[i + j] == 0):
+                    resultArr[i + j] = 1
+                else:
+                    resultArr[i + j] = 0
+
+    # Divide the result by P(x) and obtain the remainder... i.e. the mod
+    dummyArr, resultArr = np.polydiv(resultArr, px)
+    resultArr = resultArr.tolist()
+    
+    # If numpy does weird stuff this fixes it
+    for i in range(len(resultArr)):
+        if(resultArr[i] == -1 or resultArr[i] == 1):
+            resultArr[i] = "1"
+        else:
+            resultArr[i] = "0"
+            
+    # Pad array with 0's to make sure it is still 8 bits
+    while(len(resultArr) < 8):
+        resultArr.insert(0,"0")
+    
+    return "".join(resultArr)
+
 
 """
 Receives 16 bytes and substitutes with sBox value.
