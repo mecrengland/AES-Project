@@ -16,6 +16,7 @@ import math
 import numpy as np
 from keySchedule import XOR
 from keySchedule import keySchedule128
+import copy
 
 # Global Variables:
 Nk = 4
@@ -52,6 +53,12 @@ def EncryptAES(plainText, key):
     for i in range(0, int(math.ceil(len(binaryPlainText)/128))):
         listOfBlocks.append(TransformToStateArray(binaryPlainText[i*128:(i+1)*128]))
     
+    # Print Round 0
+    print("Round 0")
+    temp = copy.deepcopy(listOfBlocks[0])
+    print("Start of Round: ")
+    print(BinaryToHex(temp))
+    
     # Key Addition
     keyStateArray = TransformToStateArray("".join(expandedKey[:4]))
     xorOutput = KeyAddition(listOfBlocks[0], keyStateArray)
@@ -59,17 +66,20 @@ def EncryptAES(plainText, key):
     # 10 Rounds of AES
     for i in range(0,10):
         # Print round number
-        #print("Round: " + str(int(i+1)))
+        print("Round " + str(int(i+1)))
         
-        # Byte Substitution - must convert to hex
+        # Byte Substitution
         hexOutput = BinaryToHex(xorOutput)
-        #print(hexOutput)
+        print("Start of Round: ")
+        print(hexOutput)
         byteSubstitutionOutput = ByteSubstitution(hexOutput)
-        #print(byteSubstitutionOutput)
+        print("After Byte Substitution: ")
+        print(byteSubstitutionOutput)
         
         # Shift Rows
         shiftValueOutput = ShiftRows(byteSubstitutionOutput)
-        #print(shiftValueOutput)
+        print("After Shift Rows: ")
+        print(shiftValueOutput)
         
         # Convert to binary for Mix Column operation
         binaryValues = HexToBinary(shiftValueOutput)
@@ -77,14 +87,16 @@ def EncryptAES(plainText, key):
         # Mix Column
         if(not(i == 9)):
             mixColumnOutput = MixColumns(binaryValues)
-            #print(mixColumnOutput)
+            temp = copy.deepcopy(mixColumnOutput)
+            print("After Mix Columns: ")
+            print(BinaryToHex(temp))
         
-        # Key Addition - must convert back to binary
+        # Key Addition
         keyStateArray = TransformToStateArray("".join(expandedKey[(i+1)*4:(i+1)*4+4]))
         if(not(i == 9)): 
             xorOutput = KeyAddition(mixColumnOutput, keyStateArray)
         else:
-            xorOutput = KeyAddition(binaryValues, keyStateArray)
+            xorOutput = KeyAddition(binaryValues, keyStateArray)  
         
     binaryOutput = BinaryToHex(xorOutput)
     finalOutput = arrayToOutput(binaryOutput)
@@ -121,42 +133,59 @@ def DecryptAES(cipherText, key):
         listOfBlocks.append(TransformToStateArray(binaryCipherText[i*128:(i+1)*128]))
     
     byteSubstitutionOutput = [[]]
-    #print(listOfBlocks[0])
+    
+    # Print Round 0
+    print("Round 0")
+    temp = copy.deepcopy(listOfBlocks[0])
+    print("Start of Round: ")
+    print(BinaryToHex(temp))
     
     # 10 Rounds of AES
-    for i in range(0,10):
-        # Print round number
-        #print("Round: " + str(int(i+1)))
-        
-        # Key Addition - must convert back to binary
+    for i in range(0,10):        
+        # Key Addition
         keyStateArray = TransformToStateArray("".join(expandedKey[(10-i)*4:(10-i)*4+4]))
         if(not(i == 0)): 
+            # Print round number
+            print("Round " + str(int(i)))
+            print("Start of Round: ")
+            temp = copy.deepcopy(byteSubstitutionOutput)
+            print(BinaryToHex(temp))
+            
             keyAddOutput = KeyAddition(byteSubstitutionOutput, keyStateArray)
         else:
             keyAddOutput = KeyAddition(listOfBlocks[0], keyStateArray)
-        #print(keyStateArray)
-        #print(keyAddOutput)
+        
+        print("After Key Addition: ")
+        temp = copy.deepcopy(keyAddOutput)
+        print(BinaryToHex(temp))
         
         # Mix Column
         if(not(i == 0)):
             mixColumnOutput = InvMixColumns(keyAddOutput)
-            #print(mixColumnOutput)
+            print("After Mix Columns: ")
+            temp = copy.deepcopy(mixColumnOutput)
+            print(BinaryToHex(temp))
         else:
             mixColumnOutput = keyAddOutput
         
         # Shift Rows
         shiftValueOutput = InvShiftRows(mixColumnOutput)
             
-        # Byte Substitution - must convert to hex
+        # Byte Substitution
         hexOutput = BinaryToHex(shiftValueOutput)
-        #print(hexOutput)
+        print("After Shift Rows: ")
+        print(hexOutput)
+        
         byteSubstitutionOutput = InvByteSubstitution(hexOutput)
-        #print(byteSubstitutionOutput)
         
         byteSubstitutionOutput = HexToBinary(byteSubstitutionOutput)
         
     
     # Key Addition
+    print("Round 10")
+    print("Start of Round: ")
+    temp = copy.deepcopy(byteSubstitutionOutput)
+    print(BinaryToHex(temp))
     keyStateArray = TransformToStateArray("".join(expandedKey[:4]))
     finalValues = KeyAddition(byteSubstitutionOutput, keyStateArray)
     
