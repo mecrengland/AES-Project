@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
 """
 Authors: Megan England & Hogan Myers
 
-Author Notes:
-    
+Author Notes:   
 Since this AES implementation is only for a key size of 128,
 Nk (# of words) will always be 4, and Nr (# of rounds) will 
 always be 10.
-
-
 """
 
 """
@@ -63,17 +59,17 @@ def EncryptAES(plainText, key):
     # 10 Rounds of AES
     for i in range(0,10):
         # Print round number
-        print("Round: " + str(int(i+1)))
+        #print("Round: " + str(int(i+1)))
         
         # Byte Substitution - must convert to hex
         hexOutput = BinaryToHex(xorOutput)
-        print(hexOutput)
+        #print(hexOutput)
         byteSubstitutionOutput = ByteSubstitution(hexOutput)
-        print(byteSubstitutionOutput)
+        #print(byteSubstitutionOutput)
         
         # Shift Rows
         shiftValueOutput = ShiftRows(byteSubstitutionOutput)
-        print(shiftValueOutput)
+        #print(shiftValueOutput)
         
         # Convert to binary for Mix Column operation
         binaryValues = HexToBinary(shiftValueOutput)
@@ -81,7 +77,7 @@ def EncryptAES(plainText, key):
         # Mix Column
         if(not(i == 9)):
             mixColumnOutput = MixColumns(binaryValues)
-            print(mixColumnOutput)
+            #print(mixColumnOutput)
         
         # Key Addition - must convert back to binary
         keyStateArray = TransformToStateArray("".join(expandedKey[(i+1)*4:(i+1)*4+4]))
@@ -90,7 +86,9 @@ def EncryptAES(plainText, key):
         else:
             xorOutput = KeyAddition(binaryValues, keyStateArray)
         
-    print("FINAL ENCRYPTED OUTPUT: " + str(BinaryToHex(xorOutput)))
+    binaryOutput = BinaryToHex(xorOutput)
+    finalOutput = arrayToOutput(binaryOutput)
+    print("FINAL ENCRYPTED OUTPUT: " + finalOutput)
     
     
 def DecryptAES(cipherText, key):
@@ -123,12 +121,12 @@ def DecryptAES(cipherText, key):
         listOfBlocks.append(TransformToStateArray(binaryCipherText[i*128:(i+1)*128]))
     
     byteSubstitutionOutput = [[]]
-    print(listOfBlocks[0])
+    #print(listOfBlocks[0])
     
     # 10 Rounds of AES
     for i in range(0,10):
         # Print round number
-        print("Round: " + str(int(i+1)))
+        #print("Round: " + str(int(i+1)))
         
         # Key Addition - must convert back to binary
         keyStateArray = TransformToStateArray("".join(expandedKey[(10-i)*4:(10-i)*4+4]))
@@ -136,13 +134,13 @@ def DecryptAES(cipherText, key):
             keyAddOutput = KeyAddition(byteSubstitutionOutput, keyStateArray)
         else:
             keyAddOutput = KeyAddition(listOfBlocks[0], keyStateArray)
-        print(keyStateArray)
-        print(keyAddOutput)
+        #print(keyStateArray)
+        #print(keyAddOutput)
         
         # Mix Column
         if(not(i == 0)):
             mixColumnOutput = InvMixColumns(keyAddOutput)
-            print(mixColumnOutput)
+            #print(mixColumnOutput)
         else:
             mixColumnOutput = keyAddOutput
         
@@ -151,19 +149,40 @@ def DecryptAES(cipherText, key):
             
         # Byte Substitution - must convert to hex
         hexOutput = BinaryToHex(shiftValueOutput)
-        print(hexOutput)
+        #print(hexOutput)
         byteSubstitutionOutput = InvByteSubstitution(hexOutput)
-        print(byteSubstitutionOutput)
+        #print(byteSubstitutionOutput)
         
         byteSubstitutionOutput = HexToBinary(byteSubstitutionOutput)
         
     
     # Key Addition
     keyStateArray = TransformToStateArray("".join(expandedKey[:4]))
-    finalOutput = KeyAddition(byteSubstitutionOutput, keyStateArray)
+    finalValues = KeyAddition(byteSubstitutionOutput, keyStateArray)
     
-    print("FINAL DECRYPTED OUTPUT: " + str(BinaryToHex(finalOutput)))
+    # Convert result to string
+    binaryOutput = BinaryToHex(finalValues)
+    finalOutput = arrayToOutput(binaryOutput)
+    print("FINAL DECRYPTED OUTPUT: " + finalOutput)
     
+"""
+Converts 2d array into output string.
+"""
+def arrayToOutput(inputArray):    
+    width, height = 4, 4
+    temp = [[0 for x in range(width)] for y in range(height)] 
+    outputString = ""
+    
+    for i in range(len(inputArray)):
+        for j in range(len(inputArray[i])):
+            temp[j][i] = inputArray[i][j]
+            
+    for i in range(len(temp)):
+        for j in range(len(temp[i])):
+            outputString += temp[i][j]
+            outputString += " "
+
+    return outputString        
 
 """
 Converts binary string to hex string.
