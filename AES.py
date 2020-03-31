@@ -13,9 +13,9 @@ EncryptAES("0123456789ABCDEF","")
 """
 
 import math
-import numpy as np
 from keySchedule import XOR
 from keySchedule import keySchedule128
+from polynomialDiv import polyDivRem
 import copy
 
 # Global Variables:
@@ -483,8 +483,7 @@ def polyMultWithReduction(poly1, poly2):
                     resultArr[i + j] = 0
 
     # Divide the result by P(x) and obtain the remainder... i.e. the mod
-    dummyArr, resultArr = np.polydiv(resultArr, px)
-    resultArr = resultArr.tolist()
+    resultArr = polyDivRem(resultArr, px)
     
     # If numpy does weird stuff this fixes it
     for i in range(len(resultArr)):
@@ -496,6 +495,9 @@ def polyMultWithReduction(poly1, poly2):
     # Pad array with 0's to make sure it is still 8 bits
     while(len(resultArr) < 8):
         resultArr.insert(0,"0")
+    # Remove extra zeros if needed
+    while(len(resultArr) > 8):
+        del resultArr[0]
     
     return "".join(resultArr)
 
