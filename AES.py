@@ -13,10 +13,14 @@ EncryptAES("0123456789ABCDEF","")
 """
 
 import math
+import keySchedule
+import polynomialDiv
 from keySchedule import XOR
 from keySchedule import keySchedule128
 from polynomialDiv import polyDivRem
 import copy
+import imp
+
 
 # Global Variables:
 Nk = 4
@@ -25,6 +29,8 @@ Nb = 4
 
 
 def EncryptAES(plainText, key):
+    imp.reload(keySchedule)
+    imp.reload(polynomialDiv)
     
     key = key.split()
     
@@ -104,6 +110,8 @@ def EncryptAES(plainText, key):
     
     
 def DecryptAES(cipherText, key):
+    imp.reload(keySchedule)
+    imp.reload(polynomialDiv)
     
     key = key.split()
     
